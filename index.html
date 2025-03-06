@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biohacker | Real-time Glucose Monitoring</title>
+    <meta name="description"
+        content="Follow my real-time glucose levels 24/7. Software engineer and biohacker living with Type 1 Diabetes and developing AI tools for CGM data interpretation.">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- Chart.js libraries will be loaded dynamically -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+        }
+
+        /* Transition for chart loading */
+        #chart-loading-placeholder,
+        #glucose-chart {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* Responsive chart container */
+        .chart-container {
+            height: 400px;
+            margin-bottom: 0;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+    <!-- Dark Mode Toggle -->
+    <div class="dark-mode-toggle">
+        <button id="theme-toggle"
+            class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+            <svg id="sun-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                    fill-rule="evenodd" clip-rule="evenodd"></path>
+            </svg>
+            <svg id="moon-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="max-w-2xl mt-10 mx-auto px-4 py-12">
+        <!-- Hero Section -->
+        <header class="mb-16 text-center">
+            <h1 class="text-4xl font-bold mb-3 dark:text-white">Kirill Gusev</h1>
+            <p class="text-xl text-gray-600 dark:text-gray-400">Software Engineer. Self-Quantifier. Living with Type 1
+                Diabetes.</p>
+        </header>
+
+        <!-- Glucose Chart Placeholder (Primary Feature) -->
+        <section
+            class="mb-16 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <h2 class="text-2xl font-semibold mb-4 dark:text-white">📊 My Real-Time Glucose Levels</h2>
+
+            <!-- Chart container with fixed height -->
+            <div class="chart-container mt-4 mb-4 rounded-md overflow-hidden">
+                <!-- Chart Loading Placeholder - will be replaced when chart is loaded -->
+                <div id="chart-loading-placeholder"
+                    class="bg-gray-100 dark:bg-gray-700 p-10 rounded-md flex items-center justify-center absolute inset-0"
+                    style="opacity: 1;">
+                    <p class="text-gray-500 dark:text-gray-400 text-center">
+                        <span class="block text-lg font-medium mb-2">Live Blood Sugar Monitor</span>
+                        <span class="block">I stream my glucose data online 24/7</span>
+                        <span class="block mt-2 text-sm">Chart loading soon...</span>
+                    </p>
+                </div>
+
+                <div id="glucose-chart" class="absolute inset-0" style="display: none; opacity: 0;"></div>
+            </div>
+
+            <p class="mt-12 text-gray-600 dark:text-gray-400 text-sm">Experience what it's like to live with Type 1
+                Diabetes through
+                real-time data. My glucose levels update automatically - no page refresh needed.</p>
+        </section>
+
+        <!-- About Me Section -->
+        <section class="mb-16">
+            <!-- <img src="/img/kirill.jpeg" alt="Kirill Gusev" class="w-48 h-48 rounded-full object-cover mx-auto mb-6"> -->
+            <h2 class="text-2xl font-semibold mb-6 flex items-center dark:text-white">
+                <span class="mr-2">👨‍💻</span> The Biohacker Behind the Data
+            </h2>
+            <div class="space-y-4">
+
+                <p class="dark:text-gray-300">
+                    Hi there! I'm a software engineer and biohacker who leverages technology to understand and optimize
+                    my body. For over 15 years,
+                    I've been living with Type 1 Diabetes, which has turned me into a passionate self-quantifier.
+                </p>
+                <p class="dark:text-gray-300">
+                    My journey with diabetes has inspired me to bridge the gap between medical devices and software that
+                    can genuinely improve lives. I believe in the power of real-time health data to transform how we
+                    manage chronic conditions and optimize performance.
+                </p>
+                <p class="dark:text-gray-300">
+                    Now I'm working on making biodata more accessible and insightful through technology.
+                </p>
+            </div>
+        </section>
+
+        <!-- ChatCGM Promotion -->
+        <section
+            class="mb-16 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <h2 class="text-2xl font-semibold mb-6 flex items-center dark:text-white">
+                <span class="mr-2">🤖</span> Introducing ChatCGM
+            </h2>
+            <div class="space-y-4">
+                <p class="dark:text-gray-300">
+                    I'm building <strong>ChatCGM</strong> - an AI-powered assistant that helps interpret continuous
+                    glucose monitoring data for people with diabetes and biohackers interested in metabolic health.
+                </p>
+                <p class="dark:text-gray-300">
+                    ChatCGM translates complex glucose patterns into actionable insights, helping you understand what's
+                    happening with your blood sugar and why.
+                </p>
+                <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md mt-6">
+                    <p class="font-medium text-blue-800 dark:text-blue-300">Interested to try ChatCGM?</p>
+                    <a href="https://chatcgm.com/"
+                        class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors">
+                        Get Early Access
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Personal Interests -->
+        <section class="mb-16">
+            <h2 class="text-2xl font-semibold mb-6 flex items-center dark:text-white">
+                <span class="mr-2">🌟</span> Biohacking Beyond Glucose
+            </h2>
+            <div class="space-y-4">
+                <p class="dark:text-gray-300">
+                    <span class="font-medium dark:text-white">💪 Calisthenics enthusiast</span> - I've discovered that
+                    bodyweight training helps keep my blood sugar levels stable throughout the day.
+                </p>
+                <p class="dark:text-gray-300">
+                    <span class="font-medium dark:text-white">♟️ Chess player</span> - Interestingly, intense chess
+                    matches spike my glucose similar to competitive sports!
+                </p>
+                <p class="dark:text-gray-300">
+                    <span class="font-medium dark:text-white">🇪🇸 Barcelona transplant</span> - Recently relocated to
+                    this beautiful city and embracing the language learning journey as a new cognitive challenge.
+                </p>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-6 flex items-center dark:text-white">
+                <span class="mr-2">📬</span> Let's Connect
+            </h2>
+            <div class="flex justify-center space-x-6 text-2xl py-2">
+                <a href="https://www.linkedin.com/in/kirill-gusev-454b2037/"
+                    class="text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition"><i
+                        class="fab fa-linkedin"></i></a>
+                <a href="https://www.tiktok.com/@diabyte8"
+                    class="text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition"><i
+                        class="fab fa-tiktok"></i></a>
+                <a href="https://x.com/kirillxgusev"
+                    class="text-gray-700 hover:text-blue-400 dark:text-gray-400 dark:hover:text-blue-300 transition"><i
+                        class="fa-brands fa-x-twitter"></i></a>
+            </div>
+            <p class="text-center mt-4 dark:text-gray-300">
+                Feel free to reach out if you're interested in biohacking, diabetes tech, IoT solutions, or just want to
+                chat about
+                self-quantification and health optimization.
+            </p>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            class="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-gray-500 dark:text-gray-400 text-sm">
+            <p>© 2025 Kirill Gusev biohacker.it.com. All glucose data is real and streamed from my personal CGM device.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Function to set the theme based on user preference or system setting
+        function setTheme() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const sunIcon = document.getElementById('sun-icon');
+            const moonIcon = document.getElementById('moon-icon');
+
+            // Check if user preference is stored
+            const userTheme = localStorage.getItem('theme');
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+            // Initialize theme based on user preference or system setting
+            if (userTheme === 'dark' || (!userTheme && systemTheme === 'dark')) {
+                document.documentElement.classList.add('dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+
+            // Toggle theme when button is clicked
+            themeToggle.addEventListener('click', function () {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    sunIcon.classList.add('hidden');
+                    moonIcon.classList.remove('hidden');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                }
+            });
+        }
+
+        // Listen for changes to system color scheme preference
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (!localStorage.getItem('theme')) {
+                if (e.matches) {
+                    document.documentElement.classList.add('dark');
+                    document.getElementById('sun-icon').classList.remove('hidden');
+                    document.getElementById('moon-icon').classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.getElementById('sun-icon').classList.add('hidden');
+                    document.getElementById('moon-icon').classList.remove('hidden');
+                }
+            }
+        });
+
+        // Initialize theme when page loads
+        document.addEventListener('DOMContentLoaded', setTheme);
+
+        // Lazy load chart libraries and initialize chart
+        function loadChartLibraries() {
+            const chartjsScript = document.createElement('script');
+            chartjsScript.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+
+            const dateFnsScript = document.createElement('script');
+            dateFnsScript.src = 'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns';
+
+            const glucoseChartScript = document.createElement('script');
+            glucoseChartScript.src = 'glucoseChart.js';
+
+            // Once all scripts are loaded, show the chart and hide the placeholder
+            glucoseChartScript.onload = function () {
+                const placeholder = document.getElementById('chart-loading-placeholder');
+                const chartElement = document.getElementById('glucose-chart');
+
+                if (placeholder && chartElement) {
+                    // Fade out placeholder
+                    placeholder.style.opacity = '0';
+
+                    // After transition, hide placeholder and show chart
+                    setTimeout(() => {
+                        placeholder.style.display = 'none';
+                        chartElement.style.display = 'block';
+
+                        // Fade in chart
+                        setTimeout(() => {
+                            chartElement.style.opacity = '1';
+                        }, 50);
+                    }, 500);
+                }
+            };
+
+            // Load scripts in the correct order
+            document.body.appendChild(chartjsScript);
+
+            chartjsScript.onload = function () {
+                document.body.appendChild(dateFnsScript);
+
+                dateFnsScript.onload = function () {
+                    document.body.appendChild(glucoseChartScript);
+                };
+            };
+        }
+
+        // Load chart libraries after the page has finished loading its critical content
+        if (window.requestIdleCallback) {
+            // Use requestIdleCallback if available for better performance
+            requestIdleCallback(() => {
+                loadChartLibraries();
+            });
+        } else {
+            // Fallback for browsers without requestIdleCallback
+            setTimeout(loadChartLibraries, 1000);
+        }
+    </script>
+    <!-- 100% privacy-first analytics -->
+    <script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+</body>
+
+</html>
