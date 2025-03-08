@@ -116,7 +116,7 @@
     };
 
     let glucoseData = await fetchGlucoseData();
-    let treatmentData = []; //await fetchTreatmentData();
+    let treatmentData = await fetchTreatmentData();
 
     // Get current glucose value and trend
     const getCurrentGlucose = () => {
@@ -423,7 +423,7 @@
     const updateChart = async () => {
         // Fetch latest glucose data
         glucoseData = await fetchGlucoseData();
-        treatmentData = []; //await fetchTreatmentData();
+        treatmentData = await fetchTreatmentData();
 
         // Update chart with new glucose data
         chart.data.datasets[0].data = glucoseData.map(item => ({
